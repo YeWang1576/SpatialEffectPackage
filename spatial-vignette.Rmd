@@ -1,0 +1,727 @@
+---
+title: "Design-Based Inference for Spatial Effects with the *SpatialEffect* package"
+author: "Cyrus Samii (cds2083@nyu.edu) and Ye Wang (yw1576@nyu.edu)"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+bibliography: vign-refs.bib
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Overview
+
+Here we present methods that can be implemented using the `SpatialEffect` package for R, which follows @aronow-samii-wang-spatial and contains the `SpatialEffect()` function to estimate the "marginalized individualistic effect" with spatial data.  For questions or comments, please contact the package authors listed above.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width=4)
+```
+
+## Loading the package
+
+The package is currently in development and can be pulled from the Github repository, https://github.com/cdsamii/spatial.  
+
+Once you have downloaded the latest version of the repository, you can load the package from the local directory where it is stored on your computer. 
+
+A few preliminaries:
+
+* Set your working directory equal to the path that leads to the `github/spatial/package` directory inside the repository. 
+* Be sure that `Xcode` and `gfortran` are installed on your computer.  See here: https://github.com/fxcoudert/gfortran-for-macOS/releases 
+* Be sure that the following packages are installed:
+    - `Rcpp`
+    - `RcppArmadillo`
+    - `raster` (which includes dependencies)
+    - `fields` (which includes dependencies)
+    - `ri`
+
+
+Then, install the `SpatialEffect` package by running 
+
+```install.packages("SpatialEffect_1.0.tar.gz", repos=NULL, type="source")``` 
+
+in the R console.  You are now ready to call up the relevant packages:
+```{r loading, include=TRUE}
+library(Rcpp)
+library(RcppArmadillo)
+library(raster)
+library(fields)
+library(ri)
+library(SpatialEffect)
+```
+
+## Methods
+
+### Setting
+
+The `SpatialEffect()` function estimates the "marginalized individualistic response" as defined in @aronow-samii-wang-spatial.  We provide a brief definition and illustration here.  
+
+Suppose that we have a set of intervention nodes indexed by $i=1,...,N$, and these nodes are arrayed as points in a spatial field that consists of a finite set of points, \mathcal{X}.  Each point in this spatial field, $x \in \mathcal{X}$, equals a coordinate vector f length 2 (recording, e.g., longitude and latitude coordinates).  The coordinates of intervention node $i$ are given by $x(i)$.   
+
+For each intervention node, we have a binary random variable $Z_i \in \{0,1\}$ that connotes whether, at node $i$, treatment is activated ($Z_i = 1$) or not ($Z_i = 0$). Denote the ordered vector of treatments as $\mathbf{Z} = (Z_1,...,Z_N)'$, with support $\mathcal{Z}$.
+
+We use potential outcomes notation such that point $x \in \mathcal{X}$ has value $Y_x(\mathbf{Z})$ when the treatment vector equals $\mathbf{Z}$.  When $\mathbf{Z}$ is a vector of only zeroes, then no nodes have active treatments, in which case we have a field of null outcomes, $Y_x(0)$.
+
+Data for points in $\mathcal{X}$ come in various formats. We may have raster data, for which all points in a given raster cell will take the same value.  Alternatively, we may have data for only a sparse set of points in $\mathcal{X}$, in which case we could either limit ourselves to working with those sparse points, or we could work with values interpolated between the points.  We consider these two cases below.
+
+### Circle averages 
+
+We define a circle average function,
+Correspondingly, the circle average would take the form,
+$$
+\mu_i(a; d) = \frac{1}{| \{x:d_i(x) =d \}|}\int_{x \in  \{x:d_i(x) =d \}} a_x
+$$
+where $\{x:d_i(x) =d \}$ defines a circle with radius $d$ around intervention node $i$ and $|\{x:d_i(x) =d \}|$ is the length of this circle.
+
+In cases where observation points are discrete, then the circle average function would use a coarsened distance operator,
+$$
+d_i(x; \kappa) = \lfloor \| x(i) - x \| \times 10^{\kappa}+0.5 \rfloor \times 10^{-\kappa}
+$$ 
+which measures the coarsened distance between point $x$ and intervention node $i$, with coarsening parameter, $\kappa$.  The set $\{x:d_i(x;\kappa) =d \}$ defines a coarsened circle with radius $d$ around intervention node $i$ that contains all the points for which $d_i(x; \kappa) = d$.  
+
+Correspondingly, the circle mean would take the form,
+$$
+\mu_i(a_x; d, \kappa) = \frac{1}{| \{x:d_i(x;\kappa) =d \}|}\sum_{x \in  \{x:d_i(x;\kappa) =d \}} a_x
+$$
+which computes the average of $a_x$ values at points with coarsened distance $d$ from node $i$. 
+
+Below, we focus on the continuous case, and extension to the coarsened case would follow in a straightforward manner by substituting appropriately.
+
+### The marginalized individualistic response (MIR)
+
+As the potential outcome notation $Y_x(\mathbf{Z})$ indicates, outcomes at each raster cell, $x$ depend on the full vector of treatment assignments, $\mathbf{Z}$.  This allows for spatial spillovers or other interference effects.  
+
+We can rewrite the potential outcome at point $x$ as $Y_x(Z_i, \mathbf{Z}_{-i})$, where $\mathbf{Z}_{-i}$ is the random variable equalling $\mathbf{Z}$, but omitting the value for node $i$.  This allows us to pay special attention to how variation in treatment at node $i$ relates to potential outcomes at point $x$, given variation in treatment values in $\mathbf{Z}_{-i}$.  
+
+We can marginalize over this variation in $\mathbf{Z}_{-i}$ to define an "individualistic" average of potential outcomes for cell $x$, holding node $i$ to treatment value $z$:
+$$
+Y_{ix}(z; \alpha) = \sum_{\mathbf{z}_{-i}\in \mathcal{Z}_{-i}} Y_x(z, \mathbf{z}_{-i})\mathrm{Pr}(\mathbf{Z}_{-i}=\mathbf{z}_{-i}|Z_i = z, \alpha),
+$$
+where $\alpha$ is the experimental design parameter that governs the distribution of $\mathbf{Z}$, $\mathbf{z}_{-i}$ is a vector of treatment values at nodes other than node $i$, and $\mathcal{Z}_{-i}$ is the set of possible values that $\mathbf{Z}_{-i}$ can take.  
+
+This allows us to define the causal effect at point $x$ of intervening on node $i$, allowing other nodes to vary as they otherwise would under $\alpha$:
+$$
+\tau_{ix}(\alpha) = Y_{ix}(1;\alpha) - Y_{ix}(0, \alpha).
+$$
+This defines the effect on raster cell $x$ of switching node $i$ from no treatment to active treatment, averaging over possible treatment assignments to the nodes other than $i$.
+
+Taking the circle average of such intervention effects around node $i$, $\mu_i(\tau_{ix}(\alpha); d)$,
+ the MIR for distance $d$ is given by,
+$$
+\tau(d;\alpha) = \textrm{E}\left[\mu_i(\tau_{ix}(\alpha); d) \right],
+$$
+where the expectations operator marginalizes over the possible values of $\mathbf{Z}$.
+
+### Estimator
+
+As discussed in @aronow-samii-wang-spatial, an unbiased non-parametric estimator for the MIR is given by,
+$$
+\widehat{\tau}(d) = \frac{1}{Np}\sum_{i=1}^N Z_i \widehat{\mu}_i(d) - \frac{1}{N(1-p)}\sum_{i=1}^N (1-Z_i) \widehat{\mu}_i(d),
+$$
+where $p$ is the proportion of intervention nodes with active treatment, 
+$$
+\widehat{\mu}_i(d) =  \frac{1}{| \{x:d_i(x) =d \wedge x \in \mathcal{X_E} \}|}\sum_{x \in  \{x:d_i(x) =d \wedge x \in \mathcal{X_E} \}} Y_x,
+$$
+and $\mathcal{X_E}$ is a set of independently selected evaluation points on the circle of radius $d$ around node $i$.
+
+With raster data, we can implement $\widehat{\mu}_i(d)$ using outcome values for points within raster cells. That is, with raster data, the value $Y_x$ corresponds to the value of the raster cell within which $x$ falls.
+
+For data that consist of discrete points over the field, we have two options. One is to use coarsened circle averages, as defined above.  But if the discrete points are sparse, then another approach is to use interpolation.  The ```SpatialEffect``` function includes an approach to do this using a kriging fit. That is, it fits a spatial Gaussian process kriging regression based on the ```Krig()``` function in the ```fields``` package. Then, the predicted values from the kriging fit are used for the $Y_x$ values in the expression above.  @aronow-samii-wang-spatial discuss performance of this interpolation approach.
+
+### Inference
+
+The `SpatialEffect()` function allows for two types of inference for the estimated MIR: 
+
+* A visual, sharp null permutation test, which plots the estimated MIR amidst values of the MIR estimated under permutations of the treatment assignment.
+* Confidence intervals that combines a normal approximation with a non-parametric spatial heteroskedasticity and autocorrelation consistent (spatial-HAC) standard error estimator as proposed by @conley99_spatial.
+
+
+## Illustrations
+
+### Toy raster data simulation
+
+#### Simulated raster data
+
+We illustrate using a toy example with 4 intervention nodes in a spatial field where outcomes are recorded in a 4-by-4 raster.
+```{r define-raster, include=TRUE, fig.show='hold'}
+set.seed(123567)
+Yscale <- 4 	# Number of raster grid cells per side.  
+				# Be sure to make it a multiple of YZratio
+Y0_sd <- 1		# Noisiness of null outcomes
+YZratio <- 2	# Size of strata within with Z is assigned, relative to gridcells
+Zjitter <- 1	# Amount of randomness away from center of assignment stratum for
+				      # placing the intervention nodes (Z).
+
+# Create a null Y0 raster	
+	ras0 <- raster(	nrows=Yscale, 
+		ncols=Yscale, 
+		xmn=0, xmx=Yscale, 
+		ymn=0, ymx=Yscale, 
+		vals=rnorm(Yscale*Yscale, mean=0, sd=Y0_sd))
+
+# Dataset with Y0 values and then centroids of the raster cells.
+Y0 <- getValues(ras0)
+Yxy <- coordinates(ras0)
+Yindex <- 1:nrow(Yxy)
+Ydata <- data.frame(Yindex,cbind(Y0,Yxy))
+
+# Intervention nodes
+# we create them using the aggregate function:
+
+Zxy <- coordinates(aggregate(ras0, fact=YZratio, fun=mean))
+Zxy[,1] <- jitter(Zxy[,1], amount=Zjitter)
+Zxy[,2] <- jitter(Zxy[,2], amount=Zjitter)
+index <- 1:nrow(Zxy)
+Zdata <- as.data.frame(cbind(index, Zxy))
+Zdata$Zstart <- 0
+
+# View the null raster:
+par(mfrow=c(1,1), mar=c(2,2,3,3))
+plot(ras0, main="Null raster")  
+points(Zxy, pch=19, cex=2.25, col=gray(0))  
+text(Zxy, labels=Zdata$index, col="gray")
+```
+
+You will note that the three data inputs are (1) the raster file, `ras0`, (2) the raster outcome data, which may be stored in the raster file itself or in a separate dataset, here `Ydata`, that indexes back to the raster file, and then (3) the intervention node data, `Zdata`:
+
+```{r data-illustrate, include=TRUE, fig.show='hold'}
+print(ras0)
+Ydata
+Zdata
+```
+In the example here, the raster coordinate $x$ actually appears as the data columns `x` and `y`.  The coordinates for the `Ydata` are the raster centroids. In fact, each raster cell contains the whole set of points contained with the cell.
+
+#### Simulated spatial effects
+
+For the purposes of illustration, we create a hypothetical effect function that allows us to see how the estimation and inference would work.  Suppose that when a treatment is activated an intervention node, it generates effects that have the following properties: 
+
+- for raster cells very close to a treated node, outcomes are pulled up,
+- for raster cells at intermediate distance from a treated node, outcomes are pulled down,
+- for raster cells far from a treated node, outcomes are unchanged by the treatment at that node.
+
+We construct this hypothetical effect function by mixing two gamma-distribution kernels.  This yields a non-monotonic effect function that takes the following arguments:
+
+- `d` is the distance of a given raster cell centroid from the intervention node,
+- `sh` controls the shape of one gamma kernels, and ```sc``` controls the scale of the gamma kernels, and
+- `a` controls the amount of mixing of the two gammas.
+
+Here is the function along with an illustration of how it affects outcomes over distance: 
+
+```{r effect-function, include=TRUE, fig.show='hold'}
+effectFun <- function(d, sh, sc, a){(dgamma(abs(d), shape=sh, scale=2*sc) - a*dgamma(abs(d), shape=5*sh, scale=sc))}
+
+dist_vec_up <- seq(from=.1, to=2, by = .1) # Distances over which we will evaluate effects
+
+par(mfrow=c(1,1))
+plot(dist_vec_up,
+     effectFun(dist_vec_up, 1, .15, 1.5),
+     type="l",
+     ylab="Effect on Yx",
+     xlab="distance from intervention node")
+```
+
+To apply this effect function in our simulation, we need the distances of each raster cell centroid from each intervention node:
+```{r distance-mat, include=TRUE}
+for(i in 1:nrow(Zdata)){
+Ydata[,paste("dZ",i, sep="")] <- as.matrix(dist(rbind(Zdata[i,c("x","y")], Ydata[,c("x","y")])))[-1,1]
+}
+print(Ydata)
+```
+
+#### The true MIR
+
+To get the true MIR, we need to marginalize over all of the ways that treatment could be applied.  We suppose complete random assignment of half of nodes to treatment, in which case there are ${4 \choose 2}=6$ ways treatment could be applied.  We can use the `genperms` command from the `ri` package to produce a permutation matrix:
+``` {r perm-mat, include=TRUE}
+pZ <- .5		# Share of intervention nodes that should have Z=1.
+Zdata$Zstart[1:floor(pZ*length(Zdata$Zstart))] <- 1
+curZ <- genperms(Zdata$Zstart)
+print(curZ)
+```
+The `genperms` function is embedded in the `SpatialEffect` function to implement permutation tests.
+
+We can then simulate the potential outcomes that would correspond to each treatment assignment and view the result:
+
+``` {r sim-pos, include=TRUE, fig.show='hold'}
+for(k in 1:ncol(curZ)){
+	Ydata[,paste("Ypo",k,sep="")] <- Ydata$Y0 + 3*apply(Ydata[,grep("dZ", names(Ydata))], 
+		1,
+		function(x){sum(effectFun(x, 1, .25, 1)*curZ[,k])})
+}
+
+par(mfrow=c(2,3), mar=c(2,2,3,3))
+for(k in 1:6){
+	rasUp <- setValues(ras0, Ydata[,paste("Ypo",k,sep="")])
+	plot(rasUp, main=paste("Z", k, sep=""))  
+	points(Zxy, pch=19, cex=3, col=gray(curZ[,k]))  
+	text(Zxy, labels=Zdata$index, col="gray")
+}
+```
+
+We can now construct the causal quantities. First up are the $\tau_{ix}(\alpha)$ values (the node-and-point-specific effects). For each grid cell, there will be a separate $\tau_ix(\alpha)$ value corresponding to the effect of switching treatment status of each intervention node, averaging over possible assignments at other nodes.  This corresponds to the difference in mean potential outcomes when node $i$ is in treatment versus in control, where these means are taken with respect to the set of assignments in the assignment matrix ($\mathcal{Z}$ in the formal analysis, `curZ` in the code).
+
+So, to compute the $\tau_{ix}(\alpha)$ values, we go through each row in `curZ` and take differences in means for outcome values corresponding to columns in curZ with 1 minus columns with 0.
+
+``` {r sim-tauix, include=TRUE, fig.show='hold'}
+for(i in 1:nrow(curZ)){
+Ydata[,paste("tau",i,sep="")] <- apply(Ydata[,grep("Ypo", names(Ydata))][,curZ[i,]==1], 
+				1, mean)-apply(Ydata[,grep("Ypo", names(Ydata))][,curZ[i,]==0], 
+					1, mean)
+}
+print(Ydata)
+```
+The MIR is then based on the distance-specific averages around each node.  Since outcomes are recorded in a raster format, we use the `cellFromXY()` function from the `raster` package:
+``` {r sim-circleave, include=TRUE, fig.show='hold'}
+
+# A component of the circle average function:
+unitCircle <- function(numpts_in){
+				ptE <- sin((1:numpts_in/numpts_in)*2*pi)
+				ptN <- cos(((1:numpts_in)/numpts_in)*2*pi) 
+				circPoints <- cbind(ptE, ptN)
+				return(circPoints)
+}
+
+# A circle average function, which
+# computes average at distance d (hence
+# "dMeans"):
+
+dMeans <- function(	Zdata_in = NULL, 
+					ras_in = NULL,
+					Ydata_in = NULL,
+					Yvar="Y",
+					Outstub=Yvar,
+					gridRes_in=res(ras_in)[1],
+					dist_vec=(gridRes_in:10*gridRes_in),
+					evalpts_in=10,
+					only.unique=FALSE){
+	for(distUp in dist_vec){
+		numpts <- ceiling(ceiling(distUp/(gridRes_in/sqrt(2))+1)*pi)*evalpts_in
+		circPoints <- unitCircle(numpts)
+		for(i in 1:nrow(Zdata_in)){
+		ZxTemp <- Zdata_in[i,"x"] + circPoints[,1]*distUp
+		ZyTemp <- Zdata_in[i,"y"] + circPoints[,2]*distUp
+		if(only.unique==TRUE){
+		Zdata_in[i,paste(Outstub, "bar", distUp, sep="")] <- mean(Ydata_in[unique(na.omit(cellFromXY(ras_in, 
+														cbind(ZxTemp, ZyTemp)))),Yvar])
+		}
+		if(only.unique==FALSE){
+		Zdata_in[i,paste(Outstub, "bar", distUp, sep="")] <- mean(Ydata_in[na.omit(cellFromXY(ras_in, 
+														cbind(ZxTemp, ZyTemp))),Yvar])
+		}														
+		}
+	}
+	return(Zdata_in)
+}
+
+#Illustrating cicrle average function 
+# using the indices for the Yx values:
+
+dMeans(	Zdata_in=Zdata, 
+		ras_in=ras0, 
+		Ydata_in=Ydata, 
+		Yvar="Yindex", 
+		gridRes_in=res(ras0)[1],
+		dist_vec=dist_vec_up,
+		evalpts_in=10,
+		only.unique=FALSE)
+
+
+# Plot for checking whether the circle averages 
+# above are correct
+par(mfrow=c(1,1))
+plot(ras0)
+points(Zdata[,c("x","y")], cex=3)
+text(Zdata[,c("x","y")], labels=Zdata$index)
+text(Ydata[,"x"], Ydata[,"y"], Ydata$Yindex)
+```
+
+We can thus get the $d$-specific $\tau_{ix}(\alpha)$ values for each of the intervention nodes, and then aggregate to get the vector of $d$-specific MIR values:
+
+``` {r sim-mirmake, include=TRUE, fig.show='hold'}
+# This is just to create the dummy cells in the Z data:
+Zdata_out <- dMeans(	Zdata_in=Zdata, 
+						ras_in=ras0, 
+						Ydata_in=Ydata, 
+						Yvar="tau1", 
+						Outstub="tau",
+						gridRes_in=res(ras0)[1],
+						dist_vec=dist_vec_up,
+						evalpts_in=10,
+						only.unique=FALSE)
+
+# Now go intervention node by node:
+for(i in 1:nrow(Zdata_out)){
+Zdata_out[i,] <- dMeans(	Zdata_in=Zdata_out[i,], 
+						ras_in=ras0, 
+						Ydata_in=Ydata, 
+						Yvar=paste("tau",i,sep=""), 
+						Outstub="tau",
+						gridRes_in=res(ras0)[1],
+						dist_vec=dist_vec_up,
+						evalpts_in=10,
+						only.unique=FALSE)	
+}
+
+# Now we can get the true MIRs:
+MIRvec <- apply(Zdata_out[,grep("taubar", names(Zdata_out))], 2, mean)
+plot(dist_vec_up,
+     MIRvec, 
+    type="l",
+    ylab="true MIR",
+    xlab="distance (d)")
+```
+
+The true MIR values reflect the non-monotonicity of the effect function, although note that it is not a perfect match, because of the marginalization that is involved in defining the MIR values.
+
+#### Getting the simulated data set up
+
+Let's get our simulated data set up so that it resembles what we would have in an actual application.
+
+We have our `Zdata` for the intervention nodes, and we can consider the `Zstart` variable to be our treatment variable:
+```{r sim-showzdata, include=TRUE, fig.show='hold'}
+print(Zdata)
+```
+
+The value of the `Zstart` vector corresponds to the first column in the matrix of treatment assignments, `curZ`.  We can set up the raster data so that we set the raster cell values to the associated potential outcomes:
+```{r sim-setrasY, include=TRUE, fig.show='hold'}
+ras_sim <- setValues(ras0, Ydata[,paste("Ypo",1,sep="")])
+print(ras_sim)
+```
+We can also create an outcome dataset that corresponds to this raster object:
+```{r sim-setYdata, include=TRUE, fig.show='hold'}
+Ysim <- getValues(ras_sim)
+Yxy_sim <- coordinates(ras_sim)
+Yindex <- 1:nrow(Yxy)
+Ydata_sim <- data.frame(Yindex,cbind(Ysim,Yxy_sim))
+print(Ydata_sim)
+```
+
+#### Estimating the MIR
+
+We use the `SpatialEffect()` function to estimate the MIR. We need supply the `Ydata_sim`, `ras_sim`, and `Zdata`:
+```{r sim-MIRest, include=TRUE, fig.show='hold'}
+MIRest <- SpatialEffect(ras = ras_sim,
+                        Zdata = Zdata,
+                        x_coord_Z = "x",
+                        y_coord_Z = "y",
+                        treatment = "Zstart",
+                        dVec = seq(from=.1, to=2, by=.1),
+                        cutoff = .4,
+                        nPerms = 5000)
+print(MIRest)
+yrange_sim <- range(c(MIRest$Per.CI, MIRest$Conley.CI))
+par(mar=c(4,4, 1,1))
+plot(MIRest$MIRhat.mat, type="l",
+     ylim=yrange_sim)
+for(colUp in c(1,2)){
+points(MIRest$MIRhat.mat[,1], 
+      MIRest$Per.CI[,colUp],
+      type="l",
+      col="blue",
+      lty="dashed")
+points(MIRest$MIRhat.mat[,1], 
+      MIRest$Conley.CI[,colUp],
+      type="l",
+      col="red",
+      lty="dashed")
+}
+```
+
+In the graph, the black solid line is the MIR estimate for each of the distance (`d`) values.  The red dashed line is a confidence interval based on the spatial-HAC standard error.  The blue dashed line shows the 0.025 and .0975 quantiles of the sharp null permutation distribution, which can be used to gauge statistical significance relative to sharp null hypothesis.  
+
+#### Monte Carlo
+
+Here we conduct a Monte Carlo simulation to illustrate the performance of the estimators.  Rather than the toy example with only 4 nodes and a 4-by-4 raster, we enlargen the simulation to have a more realistic 100 intervention nodes:
+
+```{r big-montecarlo, include=TRUE, fig.show='hold'}
+Yscale <- 20 	# Number of raster grid cells per side.  
+				# Be sure to make it a multiple of YZratio
+Y0_sd <- 1		# Noisiness of null outcomes
+YZratio <- 2	# Size of strata within with Z is assigned, relative to gridcells
+Zjitter <- 1	# Amount of randomness away from center of assignment stratum for
+				# placing the intervention nodes (Z).
+pZ <- .5		# Share of intervention nodes that should have Z=1.
+dist_vec_up <- seq(from=.1, to=(Yscale/2), by = .1) # Distances over which we will evaluate effects
+
+# Create a null Y0 raster	
+	ras0 <- raster(	nrows=Yscale, 
+		ncols=Yscale, 
+		xmn=0, xmx=Yscale, 
+		ymn=0, ymx=Yscale, 
+		vals=rnorm(Yscale*Yscale, mean=0, sd=Y0_sd))
+
+# Dataset with Y0 values and then centroids of the raster cells.
+Y0 <- getValues(ras0)
+Yxy <- coordinates(ras0)
+Yindex <- 1:nrow(Yxy)
+Ydata <- data.frame(Yindex,cbind(Y0,Yxy))
+
+# Intervention nodes
+# we create them using the aggregate function:
+
+Zxy <- coordinates(aggregate(ras0, fact=YZratio, fun=mean))
+Zxy[,1] <- jitter(Zxy[,1], amount=Zjitter)
+Zxy[,2] <- jitter(Zxy[,2], amount=Zjitter)
+index <- 1:nrow(Zxy)
+Zdata <- as.data.frame(cbind(index, Zxy))
+
+# View the null raster:
+par(mfrow=c(1,1))
+plot(ras0, main="Null raster")  
+points(Zxy, pch=19, cex=1.25, col=gray(0))  
+text(Zxy, labels=Zdata$index, col="gray", cex=.5)
+
+# Create a potential outcome function:
+# - if you are very close to a treated node,
+#   you get pulled up,
+# - if you are intermediate distance from a treated
+#   node, you get pulled down,
+# - if you are far from a treated node, nothing happens.
+# It is a non-monotonic kernel function, that takes arguments:
+# - d is the distance,
+# - sh controls the shape of the gammas
+# - sc controls the scale of the gammas
+# - a controls the amount of mixing of two gammas.
+
+effectFun <- function(d, sh, sc, a){(dgamma(abs(d), shape=sh, scale=2*sc) - a*dgamma(abs(d), shape=5*sh, scale=sc))}
+
+par(mfrow=c(1,1))
+plotVec <- seq(from=0, to = (Yscale/2), by = .1)
+plot(plotVec,
+    effectFun(plotVec, 1, .25, 1),
+    type="l",
+    xlab="distance from intervention node",
+    ylab="Yx",
+    main="Effect function")
+
+# For POs, need euclidean distances of each observation cell
+# from each intervention node:
+for(i in 1:nrow(Zdata)){
+Ydata[,paste("dZ",i, sep="")] <- as.matrix(dist(rbind(Zdata[i,c("x","y")], Ydata[,c("x","y")])))[-1,1]
+}
+
+# We have a different potential outcome for each
+# possible assignment. Thus, to get the POs, we need
+# the set of feasible assignments.
+# Construct this assigment matrix, assuming complete 
+# random assignment
+# (Could also do sims that look at Bernoulli)
+# requires "ri" package:
+Zdata$Zstart <- 0
+Zdata$Zstart[1:floor(pZ*length(Zdata$Zstart))] <- 1
+curZ <- genperms(Zdata$Zstart, maxiter=500)
+
+# Then, create potential outcomes for each assignment:
+
+for(k in 1:ncol(curZ)){
+	Ydata[,paste("Ypo",k,sep="")] <- Ydata$Y0 + 3*apply(Ydata[,grep("dZ", names(Ydata))], 
+		1,
+		function(x){sum(effectFun(x, 1, .25, 1)*curZ[,k])})
+}
+
+# Now start constructing the causal quantities. 
+# First up are the tau_ix values (node-and-point-specific effects).
+# For each grid cell, there will be a separate 
+# tau_ix value corresponding to the effect of switching
+# treatment status of each intervention node, averaging
+# over possible assignments at other nodes.
+# This corresponds to the difference in mean POs when
+# node i is in treatment versus in control, where
+# these means are taken with respect to the set of assignments
+# in the assignment matrix (curZ).
+# So, to compute these tau_ix values, go through each row in curZ
+# and take differences in means for tau_ix values corresponding to 
+# columns in curZ with 1 minus columns with 0.
+
+for(i in 1:nrow(curZ)){
+Ydata[,paste("tau",i,sep="")] <- apply(Ydata[,grep("Ypo", names(Ydata))][,curZ[i,]==1], 
+				1, mean)-apply(Ydata[,grep("Ypo", names(Ydata))][,curZ[i,]==0], 
+					1, mean)
+}
+
+# Now start computing the distance-specific aggregates.
+# Function to estimate E[Vx|d_ix = d]:
+# Get d-specific raster cell means around each node
+# (requires "raster" package)
+# Gives you the option of marginalizing over only
+# unique cells versus over evaluation points.
+unitCircle <- function(numpts_in){
+				ptE <- sin((1:numpts_in/numpts_in)*2*pi)
+				ptN <- cos(((1:numpts_in)/numpts_in)*2*pi) 
+				circPoints <- cbind(ptE, ptN)
+				return(circPoints)
+}
+
+dMeans <- function(	Zdata_in = NULL, 
+					ras_in = NULL,
+					Ydata_in = NULL,
+					Yvar="Y",
+					Outstub=Yvar,
+					gridRes_in=res(ras_in)[1],
+					dist_vec=(gridRes_in:10*gridRes_in),
+					evalpts_in=10,
+					only.unique=FALSE){
+	for(distUp in dist_vec){
+		numpts <- ceiling(ceiling(distUp/(gridRes_in/sqrt(2))+1)*pi)*evalpts_in
+		circPoints <- unitCircle(numpts)
+		for(i in 1:nrow(Zdata_in)){
+		ZxTemp <- Zdata_in[i,"x"] + circPoints[,1]*distUp
+		ZyTemp <- Zdata_in[i,"y"] + circPoints[,2]*distUp
+		if(only.unique==TRUE){
+		Zdata_in[i,paste(Outstub, "bar", distUp, sep="")] <- mean(Ydata_in[unique(na.omit(cellFromXY(ras_in, 
+														cbind(ZxTemp, ZyTemp)))),Yvar])
+		}
+		if(only.unique==FALSE){
+		Zdata_in[i,paste(Outstub, "bar", distUp, sep="")] <- mean(Ydata_in[na.omit(cellFromXY(ras_in, 
+														cbind(ZxTemp, ZyTemp))),Yvar])
+		}														
+		}
+	}
+	return(Zdata_in)
+}
+
+# Now get the d-specific tau values for each of the intervention nodes
+
+# This is just to create the dummy cells in the Z data:
+Zdata_out <- dMeans(	Zdata_in=Zdata, 
+						ras_in=ras0, 
+						Ydata_in=Ydata, 
+						Yvar="tau1", 
+						Outstub="tau",
+						gridRes_in=res(ras0)[1],
+						dist_vec=dist_vec_up,
+						evalpts_in=10,
+						only.unique=FALSE)
+
+# Now go intervention node by node:
+for(i in 1:nrow(Zdata_out)){
+Zdata_out[i,] <- dMeans(	Zdata_in=Zdata_out[i,], 
+						ras_in=ras0, 
+						Ydata_in=Ydata, 
+						Yvar=paste("tau",i,sep=""), 
+						Outstub="tau",
+						gridRes_in=res(ras0)[1],
+						dist_vec=dist_vec_up,
+						evalpts_in=10,
+						only.unique=FALSE)	
+}
+
+# Now we can get the true MIRs:
+MIRvec <- apply(Zdata_out[,grep("taubar", names(Zdata_out))], 2, mean)
+
+par(mfrow=c(1,1))
+plot(dist_vec_up, MIRvec, type="l",
+     ylab="True MIR",
+     xlab="distance from intervention node")
+
+# Trial run before going through all of curZ
+
+assignUp <- 1
+Zdata$Z <- curZ[,assignUp]
+Ydata_use <- Ydata[,c("Yindex", "x","y")]
+Ydata_use$Y <- Ydata[,paste("Ypo", assignUp, sep="")]
+
+ras_use <- setValues(ras0, Ydata[,paste("Ypo",assignUp,sep="")])
+
+for(assignUp in 1:ncol(curZ)){
+
+  Zdata$Z <- curZ[,assignUp]
+  Ydata_use <- Ydata[,c("Yindex", "x","y")]
+  Ydata_use$Y <- Ydata[,paste("Ypo", assignUp, sep="")]
+  
+  ras_use <- setValues(ras0, Ydata[,paste("Ypo",assignUp,sep="")])
+  
+  MIRest_out <- SpatialEffect(ras = ras_use,
+                              Zdata = Zdata,
+                              x_coord_Z = "x",
+                              y_coord_Z = "y",
+                              treatment = "Z",
+                              dVec = dist_vec_up,
+                              cutoff = (Yscale/5),
+                              per.se = 0,
+                              conley.se = 0)  
+
+    
+  tauHat <- MIRest_out$MIRhat.mat$taudhat
+  if(assignUp==1){
+    tauHat.mat <- tauHat
+  }
+  if(assignUp>1){
+    tauHat.mat <- rbind(tauHat.mat, tauHat)
+  }
+  
+}
+
+
+# Plot results:
+
+plot(dist_vec_up, MIRvec, 
+    ylim=range(tauHat.mat),
+    ylab="MIR estimates",
+    xlab="distance from intervention node",
+    type="n")
+for(i in 1:nrow(tauHat.mat)){
+points(dist_vec_up, tauHat.mat[i,], type="l", col=gray(0, alpha=.1))
+}
+points(dist_vec_up, MIRvec, type="l", col="red")
+```
+
+It is clear from the graph that our estimator provides unbiased estimates of the MIR curve (red line) as the average of the 500 estimates (black lines) is almost identical to the true curve at each of the distance values. 
+
+## Examples
+
+Now we demonstrate how to apply our method in empirical studies using two examples. The first example comes from Paler et al. (2015) in which the authors conduct a field experiment in Aceh, Indonesia by randomly assigning forest rangers to 28 villages. The outcome of interest is forest coverage in the district (ranging from 0 to 1) and the dataset takes the form of a raster object. Each tile represents a grid on the map. The second example is based on Miguel and Kremer (2004). In this study, pupils from 25 randomly picked villages out of 50 in a Kenyan area received anti-worm treatment. We know the average effect of the treatment at village level and we want to understand its diffusion effect in the whole area. For this purpose, kriging is first used to extrapolate the outcome variable's value at each spatial point. The MIR is then estimated using these extrapolated values.
+
+```{r examples, include=TRUE, fig.show='hold'}
+load("~/Documents/GitHub/spatial/data/forest_ras.RData")
+load("~/Documents/GitHub/spatial/data/forest_Zdata.RData")
+len <- 1.5
+dVec <- seq(from=.25, to=len, by=.01)
+result.list <- SpatialEffect(ras = forest_ras, Zdata = forest_Zdata, x_coord_Z = "x_coord", y_coord_Z = "y_coord", treatment = "treatment", dVec = dVec, numpts = NULL, evalpts = 0.001, only.unique = 0, per.se = 1, conley.se = 1, cutoff = 0.3, m = 2, lambda = 0.02, nPerms = 1000)
+
+MIRhat.mat <- result.list[[1]]
+Per.CI <- result.list[[2]]
+Conley.SE <- result.list[[3]]
+Conley.CI <- result.list[[4]]
+par(mfrow=c(2,1))
+par(pty="s")
+plot(MIRhat.mat[,1:2],
+     ylab="MIR estimates",
+     xlab="distance from intervention node",
+     type="l",
+     main="MIR Estimates for Paler et al. (2015)",
+     ylim =c(-.5, .5),
+     col="black")
+points(	Conley.CI[, 1] ~ MIRhat.mat[,1], col="red", type="l", lty = 2)
+points(	Conley.CI[, 2] ~ MIRhat.mat[,1], col="red", type="l", lty = 2)
+points(	Per.CI[, 1] ~ MIRhat.mat[,1], col="blue", type="l", lty = 2)
+points(	Per.CI[, 2] ~ MIRhat.mat[,1], col="blue", type="l", lty = 2)
+
+data(worms)
+dVec <- seq(.01,.4,.01)
+
+result.list <- SpatialEffect(outcome = "any_ics99", Zdata = wormsprep, 
+x_coord_Z = "east", y_coord_Z = "north", treatment = "wgrp1", dVec = dVec, 
+numpts = 10, evalpts = 1, only.unique = 0, cutoff = 0.1, per.se = 1, 
+conley.se = 1, m = 2, lambda = 0.02, nPerms = 1000)
+
+MIRhat.mat <- result.list[[1]]
+Per.CI <- result.list[[2]]
+Conley.SE <- result.list[[3]]
+Conley.CI <- result.list[[4]]
+
+plot(MIRhat.mat,
+     ylab="MIR estimates",
+     xlab="distance from intervention node",
+     type="l",
+     ylim=c(-.3, 0.2),
+     main="MIR Estimates for Miguel and Kremer (2004)")
+points(	Conley.CI[, 1] ~ MIRhat.mat[,1], col="red", type="l", lty = 2)
+points(	Conley.CI[, 2] ~ MIRhat.mat[,1], col="red", type="l", lty = 2)
+points(	Per.CI[, 1] ~ MIRhat.mat[,1], col="blue", type="l", lty = 2)
+points(	Per.CI[, 2] ~ MIRhat.mat[,1], col="blue", type="l", lty = 2)
+```
+   
+As before, the black solid line in each of the two figures represents the estimate of the MIR curve. The red and blue dashed lines around it indicate confidence intervals based on the spatial-HAC standard error and the sharp null permutation distribution, respectively. We find a declining diffusion effect for treatment in both examples, even though the effect is not precisely estimated at all the distance values.
+
+## References
+

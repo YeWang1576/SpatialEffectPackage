@@ -1,13 +1,6 @@
 ---
 title: "Design-Based Inference for Spatial Effects with the *SpatialEffect* package"
-author: "Cyrus Samii (cds2083@nyu.edu) and Ye Wang (yw1576@nyu.edu)"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
-bibliography: vign-refs.bib
-vignette: >
-  %\VignetteIndexEntry{Vignette Title}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+author: "Cyrus Samii (cds2083@nyu.edu) and Ye Wang (yw1576@nyu.edu)
 ---
 
 ## Overview

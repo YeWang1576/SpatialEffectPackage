@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.width=4)
 
 ## Loading the package
 
-The package is currently in development and can be pulled from the Github repository, https://github.com/cdsamii/spatial.  
+The package is currently in development and can be pulled from the Github repository, https://github.com/YeWang1576/SpatialEffectPackage.  
 
 Once you have downloaded the latest version of the repository, you can load the package from the local directory where it is stored on your computer. 
 

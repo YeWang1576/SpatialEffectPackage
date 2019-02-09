@@ -1,6 +1,7 @@
 ---
 title: "Design-Based Inference for Spatial Effects with the *SpatialEffect* package"
 author: "Cyrus Samii (cds2083@nyu.edu) and Ye Wang (yw1576@nyu.edu)
+date: "Feb. 9, 2019"
 ---
 
 ## Overview
@@ -47,9 +48,9 @@ library(SpatialEffect)
 
 ### Setting
 
-The `SpatialEffect()` function estimates the "marginalized individualistic response" as defined in @aronow-samii-wang-spatial.  We provide a brief definition and illustration here.  
+The `SpatialEffect()` function estimates the "marginalized individualistic response" as defined in Aronow, Samii, and Wang (2019).  We provide a brief definition and illustration here.  
 
-Suppose that we have a set of intervention nodes indexed by $i=1,...,N$, and these nodes are arrayed as points in a spatial field that consists of a finite set of points, \mathcal{X}.  Each point in this spatial field, $x \in \mathcal{X}$, equals a coordinate vector f length 2 (recording, e.g., longitude and latitude coordinates).  The coordinates of intervention node $i$ are given by $x(i)$.   
+Suppose that we have a set of intervention nodes indexed by <span class="math inline">\(i=1,...,N\)</span>, and these nodes are arrayed as points in a spatial field that consists of a finite set of points, \mathcal{X}.  Each point in this spatial field, $x \in \mathcal{X}$, equals a coordinate vector f length 2 (recording, e.g., longitude and latitude coordinates).  The coordinates of intervention node $i$ are given by $x(i)$.   
 
 For each intervention node, we have a binary random variable $Z_i \in \{0,1\}$ that connotes whether, at node $i$, treatment is activated ($Z_i = 1$) or not ($Z_i = 0$). Denote the ordered vector of treatments as $\mathbf{Z} = (Z_1,...,Z_N)'$, with support $\mathcal{Z}$.
 

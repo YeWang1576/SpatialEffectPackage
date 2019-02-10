@@ -26,7 +26,7 @@ Once you have downloaded the latest version of the repository, you can load the 
 
 A few preliminaries:
 
-* Set your working directory equal to the path that leads to the `github/spatial/package` directory inside the repository. 
+* Set your working directory equal to the path that leads to the `github/SpatialEffectPackage` directory inside the repository. 
 * Be sure that `Xcode` and `gfortran` are installed on your computer.  See here: https://github.com/fxcoudert/gfortran-for-macOS/releases 
 * Be sure that the following packages are installed:
     - `Rcpp`
@@ -671,12 +671,12 @@ It is clear from the graph that our estimator provides unbiased estimates of the
 
 Now we demonstrate how to apply our method in empirical studies using two examples. The first example comes from Paler et al. (2015) in which the authors conduct a field experiment in Aceh, Indonesia by randomly assigning forest rangers to 28 villages. The outcome of interest is forest coverage in the district (ranging from 0 to 1) and the dataset takes the form of a raster object. Each tile represents a grid on the map. The second example is based on Miguel and Kremer (2004). In this study, pupils from 25 randomly picked villages out of 50 in a Kenyan area received anti-worm treatment. We know the average effect of the treatment at village level and we want to understand its diffusion effect in the whole area. For this purpose, kriging is first used to extrapolate the outcome variable's value at each spatial point. The MIR is then estimated using these extrapolated values.
 
-```{r examples, include=TRUE, fig.show='hold'}
+```{r examples, include=TRUE, fig.show='hold',  fig.width=8, fig.height=6}
 load("~/Documents/GitHub/spatial/data/forest_ras.RData")
 load("~/Documents/GitHub/spatial/data/forest_Zdata.RData")
 len <- 1.5
 dVec <- seq(from=.25, to=len, by=.01)
-result.list <- SpatialEffect(ras = forest_ras, Zdata = forest_Zdata, x_coord_Z = "x_coord", y_coord_Z = "y_coord", treatment = "treatment", dVec = dVec, numpts = NULL, evalpts = 0.001, only.unique = 0, per.se = 1, conley.se = 1, cutoff = 0.3, m = 2, lambda = 0.02, nPerms = 1000)
+result.list <- SpatialEffect(ras = forest_ras, Zdata = forest_Zdata, x_coord_Z = "x_coord", y_coord_Z = "y_coord", treatment = "treatment", dVec = dVec, dist.metric = "Euclidean", numpts = NULL, evalpts = 0.001, only.unique = 0, per.se = 1, conley.se = 1, alpha = 0.05, cutoff = 0.3, m = 2, lambda = 0.02, nPerms = 1000)
 
 MIRhat.mat <- result.list[[1]]
 Per.CI <- result.list[[2]]
@@ -721,7 +721,7 @@ points(	Per.CI[, 1] ~ MIRhat.mat[,1], col="blue", type="l", lty = 2)
 points(	Per.CI[, 2] ~ MIRhat.mat[,1], col="blue", type="l", lty = 2)
 ```
    
-As before, the black solid line in each of the two figures represents the estimate of the MIR curve. The red and blue dashed lines around it indicate confidence intervals based on the spatial-HAC standard error and the sharp null permutation distribution, respectively. We find a declining diffusion effect for treatment in both examples, even though the effect is not precisely estimated at all the distance values.
+As before, the black solid line in each of the two figures represents the estimate of the MIR curve. The red and blue dashed lines around it indicate confidence intervals based on the spatial-HAC standard error and the sharp null permutation distribution, respectively. We find a declining diffusion effect for treatment in both examples, even though the effect is not precisely estimated at all of the distance values.
 
 ## References
 

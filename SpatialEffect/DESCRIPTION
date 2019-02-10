@@ -10,9 +10,11 @@ Description: The package helps users estimate the marginalized individualistic r
 Imports:
     raster (>= 2.8.4),
     fields (>= 9.6),
-    ri (>= 0.9)
+    ri (>= 0.9),
+    geosphere (>= 1.5.7),
+    Rcpp (>= 1.0.0),
+    RcppArmadillo (>= 0.9.200.5.0)
 License: MIT
 Encoding: UTF-8
 LazyData: true
-Imports: Rcpp (>= 1.0.0)
-LinkingTo: Rcpp, RcppArmadillo
+LinkingTo: Rcpp, RcppArmadillo, raster, fields, ri, geosphere

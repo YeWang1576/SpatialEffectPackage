@@ -1,0 +1,20 @@
+Package: SpatialEffect
+Type: Package
+Title: Estimate the spatial treatment effect
+Version: 0.1.0
+Author: Cyrus Samii and Ye Wang (New York University)
+Maintainer: Ye Wang <yw1576@nyu.edu>
+Description: The package helps users estimate the marginalized individualistic response (MIR) curve defined in 
+    Aronow, Samii and Wang (2019) and its standard error. The curve describes how the treatment effect varies with 
+    distance in space.
+Imports:
+    raster (>= 2.8.4),
+    fields (>= 9.6),
+    ri (>= 0.9),
+    geosphere (>= 1.5.7),
+    Rcpp (>= 1.0.0),
+    RcppArmadillo (>= 0.9.200.5.0)
+License: MIT
+Encoding: UTF-8
+LazyData: true
+LinkingTo: Rcpp, RcppArmadillo, raster, fields, ri, geosphere

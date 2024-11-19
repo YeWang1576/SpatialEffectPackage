@@ -537,6 +537,7 @@ Ydata[,paste("tau",i,sep="")] <- apply(Ydata[,grep("Ypo", names(Ydata))][,curZ[i
 				1, mean)-apply(Ydata[,grep("Ypo", names(Ydata))][,curZ[i,]==0], 
 					1, mean)
 }
+YobsAll <- Ydata[,grep("Ypo",names(Ydata))]
 
 # Now start computing the distance-specific aggregates.
 # Function to estimate E[Vx|d_ix = d]:
@@ -622,11 +623,32 @@ Ydata_use$Y <- Ydata[,paste("Ypo", assignUp, sep="")]
 
 ras_use <- setValues(ras0, Ydata[,paste("Ypo",assignUp,sep="")])
 
-for(assignUp in 1:ncol(curZ)){
+nz <- nrow(Zdata)
+s_count <- rep(NA, length(dist_vec_up) * length(nz))
+for (d in 1:length(dist_vec_up)){
+  dUp <- dist_vec_up[d]
+  numpts <- ceiling(ceiling(dUp/(1/sqrt(2))+1)*pi)
+  for (i in 1:nz){
+    coords <- cbind(Zdata$x[i] + cos(((1:numpts)/numpts)*2*pi) * dUp, 
+                    Zdata$y[i] + sin(((1:numpts)/numpts)*2*pi) * dUp)
+    grid_index <- c(na.omit(cellFromXY(ras_use, coords)))
+    #grids <- Yobs[grid_index]
+    s_count[(d-1)*nz+i] <- length(grid_index)
+  }
+}
+s_count_sum <- cumsum(s_count)
+s_count_sum <- c(0, s_count_sum)
+
+Sdata <- data.frame(matrix(NA, sum(s_count), 3)) 
+dist_mat <- data.frame(matrix(NA, sum(s_count), nz))
+names(dist_mat) <- paste0("d", names(dist_mat))
+
+for(assignUp in 1:10){
 
   Zdata$Z <- curZ[,assignUp]
   Ydata_use <- Ydata[,c("Yindex", "x","y")]
   Ydata_use$Y <- Ydata[,paste("Ypo", assignUp, sep="")]
+  Yobs <- YobsAll[, assignUp]
   
   ras_use <- setValues(ras0, Ydata[,paste("Ypo",assignUp,sep="")])
   
@@ -649,11 +671,41 @@ for(assignUp in 1:ncol(curZ)){
     tauHat.mat <- rbind(tauHat.mat, tauHat)
   }
   
+  reg_coefs <- matrix(NA, length(dist_vec_up), ncol(curZ))
+  for (d in 1:length(dist_vec_up)){
+    dUp <- dist_vec_up[d]
+    numpts <- ceiling(ceiling(dUp/(1/sqrt(2))+1)*pi)
+    for (i in 1:nz){
+      coords <- cbind(Zdata$x[i] + cos(((1:numpts)/numpts)*2*pi) * dUp,
+                      Zdata$y[i] + sin(((1:numpts)/numpts)*2*pi) * dUp)
+      grid_index <- c(na.omit(cellFromXY(ras_use, coords)))
+      grids <- Yobs[grid_index]
+      Sdz <- cbind(grids, coords[!is.na(cellFromXY(ras_use, coords)), ])
+      Sdata[((s_count_sum[(d-1)*nz+i]+1):s_count_sum[(d-1)*nz+i+1]), ] <- Sdz
+      dist_d <- matrix(0, dim(Sdz)[1], nz)
+      dist_d[, i] <- dUp
+      dist_mat[((s_count_sum[(d-1)*nz+i]+1):s_count_sum[(d-1)*nz+i+1]), ] <- dist_d
+    }
+  }
+
+  dist_mat[dist_mat > dist_vec_up[length(dist_vec_up)]] <- 0
+  p <- mean(Zdata$Z)
+  Zup_normal <- (Zdata$Z - p) / (p * (1-p))
+  W_mat <- matrix(0, nrow(dist_mat), length(dist_vec_up))
+  tau <- rep(NA, length(dist_vec_up))
+
+  X_temp <- matrix(NA, nrow(Sdata), length(dist_vec_up))
+  for (l in 1:length(dist_vec_up)){
+    d_temp <- (dist_mat == dist_vec_up[l])
+    X_temp[, l] <- d_temp %*% Zup_normal
+  }
+  #X_temp <- d_temp %*% Zup_normal
+  reg_coefs[, assignUp] <- solve(t(X_temp) %*% X_temp) %*% (t(X_temp) %*% Sdata[, 1])
 }
 
 
 # Plot results:
-
+par(mfrow=c(1,2))
 plot(dist_vec_up, MIRvec, 
     ylim=range(tauHat.mat),
     ylab="MIR estimates",
@@ -661,6 +713,16 @@ plot(dist_vec_up, MIRvec,
     type="n")
 for(i in 1:nrow(tauHat.mat)){
 points(dist_vec_up, tauHat.mat[i,], type="l", col=gray(0, alpha=.1))
+}
+
+points(dist_vec_up, MIRvec, type="l", col="red")
+plot(dist_vec_up, MIRvec, 
+    ylim=range(tauHat.mat),
+    ylab="MIR estimates",
+    xlab="distance from intervention node",
+    type="n")
+for(i in 1:nrow(tauHat.mat)){
+points(	reg_coefs[, assignUp]~dist_vec_up, col="gray", type="l")
 }
 points(dist_vec_up, MIRvec, type="l", col="red")
 ```

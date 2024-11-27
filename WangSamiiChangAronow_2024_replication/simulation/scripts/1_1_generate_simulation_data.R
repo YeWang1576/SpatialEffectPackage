@@ -21,9 +21,9 @@ set.seed(2025)
 ##############################################################################
 ###################Set Root Directory#########################################
 ##############################################################################
-root_dir = "C:/Users/haogechang/OneDrive - Microsoft/Desktop/SpatialReplication/SpatialReplication/"
-setwd(root_dir)
-data_path="simulation/data_new/"
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+
+data_path="../data_new/"
 
 
 ##############################################################################
@@ -35,13 +35,13 @@ nsim=2000
 ##############################################################################
 ################Import Functions##############################################
 ##############################################################################
-sourceCpp("./SpatialEffect/src/DistanceCalculation2.cpp",verbose=0)
-sourceCpp("./SpatialEffect/src/calculate_tau.cpp",verbose=0)
-sourceCpp("./SpatialEffect/src/calculate_tau_separate.cpp",verbose=0)
-sourceCpp("./SpatialEffect/src/effect_nonmo.cpp",verbose=0)
-sourceCpp("./SpatialEffect/src/effect_interactive.cpp",verbose=0)
-source("./simulation/scripts/5_functions_generate_simulation_data.R")
-source("./simulation/scripts/6_functions.R")
+sourceCpp("../../SpatialEffect/src/DistanceCalculation2.cpp",verbose=0)
+sourceCpp("../../SpatialEffect/src/calculate_tau.cpp",verbose=0)
+sourceCpp("../../SpatialEffect/src/calculate_tau_separate.cpp",verbose=0)
+sourceCpp("../../SpatialEffect/src/effect_nonmo.cpp",verbose=0)
+sourceCpp("../../SpatialEffect/src/effect_interactive.cpp",verbose=0)
+source("5_functions_generate_simulation_data.R")
+source("6_functions.R")
 
 
 ##############################################################################

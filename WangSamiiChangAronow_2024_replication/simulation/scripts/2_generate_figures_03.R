@@ -6,8 +6,7 @@ library(reshape2) #for melt function
 ###################Plot AME Curve #############################################
 ###############################################################################
 
-root_dir = 'C:/Users/haogechang/OneDrive - Microsoft/Desktop/SpatialReplication/SpatialReplication'
-setwd(root_dir)
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 
 dVec=seq(0.5,10,by=0.25)
 ################################################################################
@@ -18,9 +17,9 @@ dVec=seq(0.5,10,by=0.25)
 #Null Case ###########
 ######################
 
-figure_title_null =paste0('simulation/graph_new/Randomization_test_null_', today_date,'.png') #figure name
+figure_title_null =paste0('../graph_new/Randomization_test_null_', today_date,'.png') #figure name
 
-load('simulation/data_new/Paired_randomization_test_null_10_Jun_12_points.RData')
+load('../data_new/Paired_randomization_test_null_10_Jun_12_points.RData')
 temp=simulation_result[['output_rt_list']]
 cov_64=apply(temp[[1]],1,mean)
 cov_100=apply(temp[[2]],1,mean)
@@ -46,9 +45,9 @@ ggsave(plot_null,file=figure_title_null,height=4,width=7)
 #Interactive Case ####
 ######################
 
-figure_title_interactive =paste0('simulation/graph_new/Randomization_test_interactive_', today_date,'.png') #figure name
+figure_title_interactive =paste0('../graph_new/Randomization_test_interactive_', today_date,'.png') #figure name
 
-load('simulation/data_new/Paired_randomization_test_interactive_10_Jun_12_points.RData')
+load('../data_new/Paired_randomization_test_interactive_10_Jun_12_points.RData')
 temp=simulation_result[['output_rt_list']]
 cov_64=apply(temp[[1]],1,mean)
 cov_100=apply(temp[[2]],1,mean)
@@ -75,7 +74,7 @@ ggsave(plot_interactive,file=figure_title_interactive,height=4,width=7)
 ######################
 
 
-figure_title_nonmono =paste0('simulation/graph_new/Randomization_test_nonmono_', today_date,'.png') #figure name
+figure_title_nonmono =paste0('../graph_new/Randomization_test_nonmono_', today_date,'.png') #figure name
 
 temp=simulation_result[['output_rt_list']]
 cov_64=apply(temp[[1]],1,mean)
@@ -108,20 +107,20 @@ rownames(rej_probability)=c(64,100,144)
 #Null Case ###########
 ######################
 
-load('simulation/data_new/Paired_randomization_test_sup_null_10_Jun_14_points.RData')
+load('../data_new/Paired_randomization_test_sup_null_10_Jun_14_points.RData')
 temp=simulation_result[['output_rt_list']]
 rej_probability[1,1]=mean(temp[[1]])
 rej_probability[2,1]=mean(temp[[2]])
 rej_probability[3,1]=mean(temp[[3]])
 
 
-load('simulation/data_new/Paired_randomization_test_sup_nonmono_10_Jun_14_points.RData')
+load('../data_new/Paired_randomization_test_sup_nonmono_10_Jun_14_points.RData')
 temp=simulation_result[['output_rt_list']]
 rej_probability[1,2]=mean(temp[[1]])
 rej_probability[2,2]=mean(temp[[2]])
 rej_probability[3,2]=mean(temp[[3]])
 
-load('simulation/data_new/Paired_randomization_test_sup_interactive_10_Jun_14_points.RData')
+load('../data_new/Paired_randomization_test_sup_interactive_10_Jun_14_points.RData')
 temp=simulation_result[['output_rt_list']]
 rej_probability[1,3]=mean(temp[[1]])
 rej_probability[2,3]=mean(temp[[2]])

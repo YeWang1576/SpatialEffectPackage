@@ -6,13 +6,13 @@ rm(list=ls())
 ###############################################################################
 ##########################Root Directories#####################################
 ###############################################################################
-root_dir = "C:/Users/haogechang/OneDrive - Microsoft/Desktop/SpatialReplication/SpatialReplication/"
-setwd(root_dir)
-data_address = "./simulation/data_new/"
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+
+data_path="../data_new/"
 ###############################################################################
 ##########################Source Functions#####################################
 ###############################################################################
-source('simulation/scripts/5_functions_generate_figures.R')
+source('5_functions_generate_figures.R')
 
 
 
@@ -31,7 +31,7 @@ source('simulation/scripts/5_functions_generate_figures.R')
 # 
 # #data directory
 # case=2
-# data_address = "./simulation/data_new/"
+# data_address = "../data_new/"
 # data_file="simulation_interactive_10_May_23_points"
 # n_ss=5
 # sample_sizes <- c(16,36,64,100,144)
@@ -40,7 +40,7 @@ source('simulation/scripts/5_functions_generate_figures.R')
 # 
 # #data directory
 # case=3
-# data_address = "./simulation/data_new/"
+# data_address = "../data_new/"
 # data_file="simulation_nonmono_5_May_23_points"
 # n_ss=1
 # sample_sizes <- c(729)
@@ -48,7 +48,7 @@ source('simulation/scripts/5_functions_generate_figures.R')
 # 
 # #data directory
 # case=4
-# data_address = "./simulation/data_new/"
+# data_address = "../data_new/"
 # data_file="simulation_interactive_5_May_23_points"
 # n_ss=1
 # sample_sizes <- c(729)
@@ -64,7 +64,7 @@ source('simulation/scripts/5_functions_generate_figures.R')
 # 
 # #data directory
 # case=2
-# data_address = "./simulation/data_new/"
+# data_address = "../data_new/"
 # data_file="simulation_interactive_10_May_23_points"
 # n_ss=5
 # sample_sizes <- c(16,36,64,100,144)
@@ -73,7 +73,7 @@ source('simulation/scripts/5_functions_generate_figures.R')
 # 
 # #data directory
 # case=3
-# data_address = "./simulation/data_new/"
+# data_address = "../data_new/"
 # data_file="simulation_nonmono_5_May_23_points"
 # n_ss=1
 # sample_sizes <- c(729)
@@ -81,7 +81,7 @@ source('simulation/scripts/5_functions_generate_figures.R')
 # 
 # #data directory
 # case=4
-# data_address = "./simulation/data_new/"
+# data_address = "../data_new/"
 # data_file="simulation_interactive_5_May_23_points"
 # n_ss=1
 # sample_sizes <- c(729)
@@ -103,7 +103,7 @@ source('simulation/scripts/5_functions_generate_figures.R')
 # 
 # #data directory
 # case=6
-# data_address = "./simulation/data_new/"
+# data_address = "../data_new/"
 # data_file="simulation_interactive_10_May_23_polygon"
 # n_ss=5
 # sample_sizes <- c(16,36,64,100,144)
@@ -112,7 +112,7 @@ source('simulation/scripts/5_functions_generate_figures.R')
 # 
 # #data directory
 # case=7
-# data_address = "./simulation/data_new/"
+# data_address = "../data_new/"
 # data_file="simulation_nonmono_5_May_23_polygon"
 # n_ss=1
 # sample_sizes <- c(729)
@@ -120,7 +120,7 @@ source('simulation/scripts/5_functions_generate_figures.R')
 # 
 # #data directory
 # case=8
-# data_address = "./simulation/data_new/"
+# data_address = "../data_new/"
 # data_file="simulation_interactive_5_May_23_polygon"
 # n_ss=1
 # sample_sizes <- c(729)

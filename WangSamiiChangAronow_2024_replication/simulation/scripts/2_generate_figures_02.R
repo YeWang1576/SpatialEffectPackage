@@ -6,8 +6,8 @@ library(reshape2) #for melting function
 ###################Plot AME Curve #############################################
 ###############################################################################
 
-root_dir = 'C:/Users/haogechang/OneDrive - Microsoft/Desktop/SpatialReplication/SpatialReplication'
-setwd(root_dir)
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+
 ###############################
 #######Interactive Case########
 ###############################
@@ -15,7 +15,7 @@ rm(list=ls())
 
 #load data
 dVec=seq(0.5,10,by=0.25)
-load('simulation/data_new/Paired_simData_interactive_10_Jun_06_point_ploting.RData')
+load('../data_new/Paired_simData_interactive_10_Jun_06_point_ploting.RData')
 tau_t=data_list[[1]]["tau_t"]$tau_t$tauda2
 tau_c=data_list[[1]]['tau_c']$tau_c$tauda2
 tau=data_list[[1]]['tau']$tau$tauda2
@@ -28,7 +28,7 @@ data_for_plot_long <- melt(data_for_plot, id = c("d"))
 
 #ploting
 today_date = format(Sys.Date(), format="%b_%d")
-title_interactive = paste0('simulation/graph_new/AME_interactive_', today_date,'.png') #figure name
+title_interactive = paste0('../graph_new/AME_interactive_', today_date,'.png') #figure name
 
 plot_AME_interactive=ggplot(data_for_plot_long, aes(x=d,y=value)) + 
   geom_line(aes(linetype = variable)) +
@@ -47,7 +47,7 @@ rm(list=ls())
 
 #load data
 dVec=seq(0.5,10,by=0.25)
-load('simulation/data_new/Paired_simData_nonmono_10_Jun_06_point_ploting.RData')
+load('../data_new/Paired_simData_nonmono_10_Jun_06_point_ploting.RData')
 tau=data_list[[1]]['tau']$tau$tauda2
 
 #make data into data frame
@@ -57,7 +57,7 @@ names(data_for_plot)=c('d','tau','value')
 
 
 today_date = format(Sys.Date(), format="%b_%d")
-title_additive = paste0('simulation/graph_new/AME_nonmo_', today_date,'.png') #figure name
+title_additive = paste0('../graph_new/AME_nonmo_', today_date,'.png') #figure name
 
 plot_AME_nonmono=ggplot(data_for_plot, aes(x=d,y=tau,group=value)) + 
   geom_line(aes(linetype=value))+
@@ -85,10 +85,10 @@ library(reshape2)
 rm(list=ls())
 
 today_date = format(Sys.Date(), format="%b_%d")
-title_polygon = paste0('simulation/graph_new/polygon_', today_date,'.png') #figure name
+title_polygon = paste0('../graph_new/polygon_', today_date,'.png') #figure name
 
 #load data
-load('simulation/data_new/Paired_simData_nonmono_10_Jun_06_polygon_ploting.RData')
+load('../data_new/Paired_simData_nonmono_10_Jun_06_polygon_ploting.RData')
 ras0=data_list[[1]]['ras0']$ras0
 ras_Z=data_list[[1]]['ras_Z']$ras_Z
 
@@ -103,10 +103,10 @@ dev.off()
 rm(list=ls())
 
 today_date = format(Sys.Date(), format="%b_%d")
-title_polygon = paste0('simulation/graph_new/point_', today_date,'.png') #figure name
+title_polygon = paste0('../graph_new/point_', today_date,'.png') #figure name
 
 #load data
-load('simulation/data_new/Paired_simData_nonmono_10_Jun_06_point_ploting.RData')
+load('../data_new/Paired_simData_nonmono_10_Jun_06_point_ploting.RData')
 ras0=data_list[[1]]['ras0']$ras0
 point_data=data_list[[1]]['Zdata']$Zdata[,c(2,3)]
 
@@ -127,9 +127,9 @@ dVec <- seq(from=.5, to=10, by=.25)
 #Null Case ###########
 ######################
 
-figure_title_null =paste0('simulation/graph_new/Randomization_test_null_', today_date,'.png') #figure name
+figure_title_null =paste0('../graph_new/Randomization_test_null_', today_date,'.png') #figure name
 
-load('simulation/data_new/Paired_randomization_test_null_10_Jun_12_points.RData')
+load('../data_new/Paired_randomization_test_null_10_Jun_12_points.RData')
 temp=simulation_result[['output_rt_list']]
 cov_64=apply(temp[[1]],1,mean)
 cov_100=apply(temp[[2]],1,mean)
@@ -155,9 +155,9 @@ ggsave(plot_null,file=figure_title_null,height=4,width=7)
 #Interactive Case ####
 ######################
 
-figure_title_interactive =paste0('simulation/graph_new/Randomization_test_interactive_', today_date,'.png') #figure name
+figure_title_interactive =paste0('../graph_new/Randomization_test_interactive_', today_date,'.png') #figure name
 
-load('simulation/data_new/Paired_randomization_test_interactive_10_Jun_12_points.RData')
+load('../data_new/Paired_randomization_test_interactive_10_Jun_12_points.RData')
 temp=simulation_result[['output_rt_list']]
 cov_64=apply(temp[[1]],1,mean)
 cov_100=apply(temp[[2]],1,mean)
@@ -184,9 +184,9 @@ ggsave(plot_interactive,file=figure_title_interactive,height=4,width=7)
 ######################
 
 
-figure_title_nonmono =paste0('simulation/graph_new/Randomization_test_nonmono_', today_date,'.png') #figure name
+figure_title_nonmono =paste0('../graph_new/Randomization_test_nonmono_', today_date,'.png') #figure name
 
-load('simulation/data_new/Paired_randomization_test_nonmono_10_Jun_12_points.RData')
+load('../data_new/Paired_randomization_test_nonmono_10_Jun_12_points.RData')
 temp=simulation_result[['output_rt_list']]
 cov_64=apply(temp[[1]],1,mean)
 cov_100=apply(temp[[2]],1,mean)

@@ -11,9 +11,10 @@ rm(list=ls())
 ##############################################################################
 ##################Set Root Directories########################################
 ##############################################################################
-root_dir = "C:/Users/haogechang/OneDrive - Microsoft/Desktop/SpatialReplication/SpatialReplication/"
-setwd(root_dir)
-data_path="simulation/data_new/"
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+
+data_path="../data_new/"
+
 library(foreign)
 library(sp)
 library(fields)
@@ -26,8 +27,8 @@ library(pbapply)
 ##############################################################################
 ##################Import Functions############################################
 ##############################################################################
-source("./simulation/scripts/5_functions_randomization_test.R")
-source("./simulation/scripts/6_functions.R")
+source("5_functions_randomization_test.R")
+source("6_functions.R")
 
 
 
@@ -38,7 +39,7 @@ today_date=format(Sys.Date(), format="%b_%d")
 
 # simulation with non-monotonic effect function and YZratio=10
 start.time=proc.time()
-sim1_raw_data_file = "simulation/data_new/Paired_simData_null_10_Jun_06_points.RData"
+sim1_raw_data_file = "../data_new/Paired_simData_null_10_Jun_06_points.RData"
 TYPE='null'
 YZratio=10
 sample_sizes <-c(80, 100, 120)
@@ -50,7 +51,7 @@ print(proc.time()-start.time)
 
 # simulation with non-monotonic effect function and YZratio=10
 start.time=proc.time()
-sim1_raw_data_file = "simulation/data_new/Paired_simData_nonmono_10_Jun_06_points.RData"
+sim1_raw_data_file = "../data_new/Paired_simData_nonmono_10_Jun_06_points.RData"
 TYPE='nonmono'
 YZratio=10
 sample_sizes <-c(80, 100, 120)
@@ -64,7 +65,7 @@ print(proc.time()-start.time)
 # simulation with non-monotonic effect function and YZratio=10
 #This took 177722 seconds on my laptop
 start.time=proc.time()
-sim1_raw_data_file = "simulation/data_new/Paired_simData_interactive_10_Jun_06_points.RData"
+sim1_raw_data_file = "../data_new/Paired_simData_interactive_10_Jun_06_points.RData"
 TYPE='interactive'
 YZratio=10
 sample_sizes <-c(80, 100, 120)
@@ -85,7 +86,7 @@ today_date=format(Sys.Date(), format="%b_%d")
 # simulation with non-monotonic effect function and YZratio=10
 #This one took 2735 seconds on my laptop
 start.time=proc.time()
-sim1_raw_data_file = "simulation/data_new/Paired_simData_null_10_Jun_06_points.RData"
+sim1_raw_data_file = "../data_new/Paired_simData_null_10_Jun_06_points.RData"
 TYPE='null'
 YZratio=10
 sample_sizes <-c(80, 100, 120)
@@ -99,7 +100,7 @@ print(time_rand_sup_null)
 # simulation with non-monotonic effect function and YZratio=10
 #This one took 2800 seconds on my laptop
 start.time=proc.time()
-sim1_raw_data_file = "simulation/data_new/Paired_simData_nonmono_10_Jun_06_points.RData"
+sim1_raw_data_file = "../data_new/Paired_simData_nonmono_10_Jun_06_points.RData"
 TYPE='nonmono'
 YZratio=10
 sample_sizes <-c(80, 100, 120)
@@ -114,7 +115,7 @@ print(time_rand_sup_nonmono)
 # simulation with non-monotonic effect function and YZratio=10
 #This one took 2828 seconds on my laptop
 start.time=proc.time()
-sim1_raw_data_file = "simulation/data_new/Paired_simData_interactive_10_Jun_06_points.RData"
+sim1_raw_data_file = "../data_new/Paired_simData_interactive_10_Jun_06_points.RData"
 TYPE='interactive'
 YZratio=10
 sample_sizes <-c(80, 100, 120)

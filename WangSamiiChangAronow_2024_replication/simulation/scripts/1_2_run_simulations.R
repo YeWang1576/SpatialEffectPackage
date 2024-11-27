@@ -24,21 +24,21 @@ library(data.table) #for resahpe data for ploting
 ##############################################################################
 ##################Set Root Directories########################################
 ##############################################################################
-root_dir = "C:/Users/haogechang/OneDrive - Microsoft/Desktop/SpatialReplication/SpatialReplication/"
-setwd(root_dir)
-data_path="simulation/data_new/"
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+
+data_path="../data_new/"
 
 
 ##############################################################################
 ##################Import Functions############################################
 ##############################################################################
-sourceCpp("./SpatialEffect/src/DistanceCalculation.cpp")
-sourceCpp("./SpatialEffect/src/ConleySE_kernel_matrix.cpp")
-sourceCpp("./SpatialEffect/src/Conley2.cpp")
-source("./simulation/scripts/5_functions_run_simulations.R")
-source("./simulation/scripts/6_functions.R")
-source("./simulation/scripts/6_functions2.R")
-source("./simulation/scripts/6_functions3.R")
+sourceCpp("../../SpatialEffect/src/DistanceCalculation.cpp")
+sourceCpp("../../SpatialEffect/src/ConleySE_kernel_matrix.cpp")
+sourceCpp("../../SpatialEffect/src/Conley2.cpp")
+source("5_functions_run_simulations.R")
+source("6_functions.R")
+source("6_functions2.R")
+source("6_functions3.R")
 
 
 ##############################################################################
@@ -60,7 +60,7 @@ today_date=format(Sys.Date(), format="%b_%d")
 
 # simulation with non-monotonic effect function and YZratio=10
 start.time=proc.time()
-sim1_raw_data_file = "simulation/data_new/Paired_simData_nonmono_10_Jun_06_points.RData"
+sim1_raw_data_file = "../data_new/Paired_simData_nonmono_10_Jun_06_points.RData"
 TYPE='nonmono'
 YZratio=10
 sample_sizes <-c(80, 100, 120)
@@ -74,7 +74,7 @@ print(proc.time()-start.time)
 
 # simulation with non-monotonic effect function and YZratio=10
 start.time=proc.time()
-sim1_raw_data_file = "simulation/data_new/Paired_simData_interactive_10_Jun_06_points.RData"
+sim1_raw_data_file = "../data_new/Paired_simData_interactive_10_Jun_06_points.RData"
 TYPE='interactive'
 YZratio=10
 sample_sizes <-c(80, 100, 120)
@@ -90,7 +90,7 @@ print(proc.time()-start.time)
 ##############################################################################
 # simulation with non-monotonic effect function and YZratio=10
 start.time=proc.time()
-sim1_raw_data_file = "simulation/data_new/Paired_simData_nonmono_10_Jun_09_polygon.RData"
+sim1_raw_data_file = "../data_new/Paired_simData_nonmono_10_Jun_09_polygon.RData"
 TYPE='nonmono'
 YZratio=10
 sample_sizes <-c(80, 100, 120)
@@ -104,7 +104,7 @@ print(proc.time()-start.time)
 
 # simulation with interactive effect function and YZratio=10
 start.time=proc.time()
-sim1_raw_data_file = "simulation/data_new/Paired_simData_interactive_10_Jun_09_polygon.RData"
+sim1_raw_data_file = "../data_new/Paired_simData_interactive_10_Jun_09_polygon.RData"
 TYPE='interactive'
 YZratio=10
 sample_sizes <-c(80, 100, 120)
@@ -125,7 +125,7 @@ print(proc.time()-start.time)
 # 
 # # simulation with non-monotonic effect function and YZratio=10
 # start.time=proc.time()
-# sim1_raw_data_file = "simulation/data_new/simData_nonmono_10_May_23_points.RData"
+# sim1_raw_data_file = "../data_new/simData_nonmono_10_May_23_points.RData"
 # TYPE='nonmono'
 # YZratio=10
 # sample_sizes <-c(40,60,80, 100, 120)
@@ -138,7 +138,7 @@ print(proc.time()-start.time)
 # 
 # # simulation with interactive effect function and YZratio=10
 # start.time=proc.time()
-# sim1_raw_data_file = "simulation/data_new/simData_interactive_10_May_23_points.RData"
+# sim1_raw_data_file = "../data_new/simData_interactive_10_May_23_points.RData"
 # TYPE='interactive'
 # YZratio=10
 # sample_sizes <-c(40,60,80, 100, 120)
@@ -151,7 +151,7 @@ print(proc.time()-start.time)
 # 
 # # simulation with non-monotonic effect function and YZratio=5
 # start.time=proc.time()
-# sim1_raw_data_file = "simulation/data_new/simData_nonmono_5_May_23_points.RData"
+# sim1_raw_data_file = "../data_new/simData_nonmono_5_May_23_points.RData"
 # TYPE='nonmono'
 # YZratio=5
 # sample_sizes <-c(80)
@@ -164,7 +164,7 @@ print(proc.time()-start.time)
 # 
 # # simulation with interactive effect function and YZratio=5
 # start.time=proc.time()
-# sim1_raw_data_file = "simulation/data_new/simData_interactive_5_May_23_points.RData"
+# sim1_raw_data_file = "../data_new/simData_interactive_5_May_23_points.RData"
 # TYPE='interactive'
 # YZratio=5
 # sample_sizes <-c(80)
@@ -180,7 +180,7 @@ print(proc.time()-start.time)
 # ##############################################################################
 # # simulation with non-monotonic effect function and YZratio=10
 # start.time=proc.time()
-# sim1_raw_data_file = "simulation/data_new/simData_nonmono_10_May_23_polygon.RData"
+# sim1_raw_data_file = "../data_new/simData_nonmono_10_May_23_polygon.RData"
 # TYPE='nonmono'
 # YZratio=10
 # sample_sizes <-c(40,60,80, 100, 120)
@@ -194,7 +194,7 @@ print(proc.time()-start.time)
 # 
 # # simulation with interactive effect function and YZratio=10
 # start.time=proc.time()
-# sim1_raw_data_file = "simulation/data_new/simData_interactive_10_May_23_polygon.RData"
+# sim1_raw_data_file = "../data_new/simData_interactive_10_May_23_polygon.RData"
 # TYPE='interactive'
 # YZratio=10
 # sample_sizes <-c(40,60,80, 100, 120)
@@ -207,7 +207,7 @@ print(proc.time()-start.time)
 # 
 # 
 # start.time=proc.time()
-# sim1_raw_data_file = "simulation/data_new/simData_nonmono_5_May_23_polygon.RData"
+# sim1_raw_data_file = "../data_new/simData_nonmono_5_May_23_polygon.RData"
 # TYPE='nonmono'
 # YZratio=5
 # sample_sizes <-c(80)
@@ -220,7 +220,7 @@ print(proc.time()-start.time)
 # 
 # # simulation with interactive effect function and YZratio=10
 # start.time=proc.time()
-# sim1_raw_data_file = "simulation/data_new/simData_interactive_5_May_23_polygon.RData"
+# sim1_raw_data_file = "../data_new/simData_interactive_5_May_23_polygon.RData"
 # TYPE='interactive'
 # YZratio=5
 # sample_sizes <-c(80)

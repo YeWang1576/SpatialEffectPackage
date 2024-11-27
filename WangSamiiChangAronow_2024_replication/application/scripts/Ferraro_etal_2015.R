@@ -1,6 +1,6 @@
 rm(list=ls())
 
-setwd("~/Dropbox/CurrentProjects/SpatialReplication/simulation/graphs")
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 
 library(Rcpp)
 library(RcppArmadillo)
@@ -14,10 +14,10 @@ library(raster)
 
 set.seed(2024)
 
-data_path <- "~/Dropbox/CurrentProjects/SpatialReplication/application/data/"
+data_path <- "../data/"
 
-protected_areas <- read_sf("/Users/yewang/Documents/GitHub/spatial/data/application/Costa Rica/PAs_Reproj/PAs_before80_1.shp")
-forest <- st_read("/Users/yewang/Documents/GitHub/spatial/data/application/Costa Rica/Deforestation and Carbon/Spatial/final_pixels_w_covs.shp")
+protected_areas <- read_sf("../data/Costa Rica/PAs_Reproj/PAs_before80_1.shp")
+forest <- st_read("../data/Costa Rica/Deforestation and Carbon/Spatial/final_pixels_w_covs.shp")
 forest <- st_transform(forest, st_crs(protected_areas)) # transform forest to the crs of protected areas
 
 invalid_protected_areas <- st_is_valid(protected_areas, NA_on_exception = TRUE)
@@ -136,7 +136,7 @@ pscore_fit <- glm(as.formula(pscore_formula), Zdata, family = "binomial")
 pscore_est <- predict(pscore_fit, type = "response")
 Zdata$prob_treatment <- pscore_est
 
-pdf(file="F2015-forest-pscore.pdf", height=8, width=8)
+pdf(file="../graphs/F2015-forest-pscore.pdf", height=8, width=8)
 par(mfrow=c(1,1))
 par(mar = c(5, 5, 4, 3))
 plot(density(Zdata$prob_treatment),
@@ -189,7 +189,7 @@ dVec <- seq(from=0, to=len, by=500)
 # maps
 tr_colors <- rep("goldenrod1", nrow(Zdata))
 tr_colors[Zdata$treatment == 0] <- "darkturquoise"
-pdf(file="F2015-forest-map-polygon.pdf", height=8, width=8)
+pdf(file="../graphs/F2015-forest-map-polygon.pdf", height=8, width=8)
 par(mfrow=c(1,1))
 plot(ras, bty="n", box=FALSE, col = c("white", "darkgoldenrod4"), legend=FALSE, 
      cex.lab=2,
@@ -201,7 +201,7 @@ legend("bottomleft", col = c("darkturquoise", "goldenrod1", "darkgoldenrod4"),
        lty=c(1, 1, NA), pch=c(NA, NA, 19), cex=1.5, pt.cex = c(.8, .8, .4), bty = "n")
 dev.off()
 
-pdf(file="F2015-forest-map-polygon-circles-treated.pdf", height=8, width=8)
+pdf(file="../graphs/F2015-forest-map-polygon-circles-treated.pdf", height=8, width=8)
 par(mfrow=c(1,1))
 plot(ras, bty="n", box=FALSE, col = c("white", "darkgoldenrod4"), legend=FALSE, 
      cex.lab=2,
@@ -217,7 +217,7 @@ legend("bottomleft", col = c("darkturquoise", "goldenrod1", "darkgoldenrod4"),
        lty=c(1, 1, NA), pch=c(NA, NA, 19), cex=1.5, pt.cex = c(.8, .8, .4), bty = "n")
 dev.off()
 
-pdf(file="F2015-forest-map-polygon-circles-control.pdf", height=8, width=8)
+pdf(file="../graphs/F2015-forest-map-polygon-circles-control.pdf", height=8, width=8)
 par(mfrow=c(1,1))
 plot(ras, bty="n", box=FALSE, col = c("white", "darkgoldenrod4"), legend=FALSE,
      cex.lab=2,
@@ -251,7 +251,6 @@ result.list <- SpatialEffect(ras = ras, Zdata = Zdata, ras_Z = ras_Z, alpha = al
 
 summary(result.list, dVec.range = c(1000, 5000))
 
-load("/Users/yewang/Documents/GitHub/spatial/data/forest/Ferraro_etal_2015.RData")
 AMR_est <- result.list[["AMR_est"]]
 Per.CI <- result.list[["Per.CI"]]
 Conley.SE <- result.list[["Conley.SE"]]
@@ -261,7 +260,7 @@ smoothed.Conley.SE <- result.list[["smoothed.Conley.SE"]]
 smoothed.Conley.CI <- result.list[["smoothed.Conley.CI"]]
 smoothed.Conley.CB <- result.list[["smoothed.Conley.CB"]]
 
-save(result.list, file = "/Users/yewang/Documents/GitHub/spatial/data/forest/Ferraro_etal_2015.RData")
+save(result.list, file = "../data/Ferraro_etal_2015.RData")
 
 test.result <- SpatialEffectTest(result.list, test.range = c(1000, 5000), smooth = 0)
 test.result <- SpatialEffectTest(result.list, test.range = c(1, 5), smooth = 0, alpha = 0.1)
@@ -269,7 +268,7 @@ test.result <- SpatialEffectTest(result.list, test.range = c(1, 5), smooth = 0, 
 dVec_real <- dVec / 1000
 
 
-pdf(file="Ferraro_etal_AMR_polygon_unsmoothed.pdf", height=8, width=8)
+pdf(file="../graphs/Ferraro_etal_AMR_polygon_unsmoothed.pdf", height=8, width=8)
 par(mar = c(5, 5, 5, 5))
 plot(	AMR_est[, 2] ~ dVec_real,
       ylab="Estimates",
@@ -290,7 +289,7 @@ legend("topright", col = c("black", "black", "blue"), lty=c(1,3,3), lwd = c(3, 3
        legend = c("AME estimates", "Spatial HAC 95% CI", "Quantiles under sharp null"), cex=2, bty = "n")
 dev.off()
 
-pdf(file="Ferraro_etal_AMR_polygon_smoothed.pdf", height=8, width=8)
+pdf(file="../graphs/Ferraro_etal_AMR_polygon_smoothed.pdf", height=8, width=8)
 par(mar = c(5, 5, 5, 5))
 plot(	AMR_est_smoothed[, 2] ~ dVec_real,
       ylab="Estimates",
@@ -335,7 +334,7 @@ coefs_p <- ggplot(ha.data[seq(1, nrow(ha.data) - 1, 2), ]) +
         axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
         legend.position = "bottom", panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank()) + ylab("Estimates")
-ggsave(paste0("F2015_graphs/ha_coefs_reproj_90CI.pdf"), coefs_p, device = "pdf", height = 8, width = 8) 
+ggsave(paste0("../graphs/F2015_graphs/ha_coefs_reproj_90CI.pdf"), coefs_p, device = "pdf", height = 8, width = 8) 
 
 
 smooth_ests <- AMR_est_smoothed[, 2]
@@ -363,7 +362,7 @@ coefs_p <- ggplot(smooth.data[seq(1, nrow(smooth.data) - 1, 2), ]) +
         axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
         legend.position = c(18, -0.015), panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank()) + ylab("Estimates")
-ggsave(paste0("F2015_graphs/smooth_coefs_reproj_90CI.pdf"), coefs_p, device = "pdf", height = 8, width = 8) 
+ggsave(paste0("../graphs/F2015_graphs/smooth_coefs_reproj_90CI.pdf"), coefs_p, device = "pdf", height = 8, width = 8) 
 
 
 

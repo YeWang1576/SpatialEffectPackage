@@ -1,6 +1,5 @@
 rm(list=ls())
 
-#setwd("~/Dropbox/CurrentProjects/SpatialReplication/application/graphs")
 
 library(Rcpp)
 library(RcppArmadillo)
@@ -22,14 +21,13 @@ set.seed(2024)
 ###################Set Path####################################################
 ###############################################################################
 
-root="C:/Users/haogechang/OneDrive - Microsoft/Desktop/SpatialReplication/SpatialReplication/"
-setwd(root)
-data_path <- "application/data/"
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+data_path <- "../data/"
 
 ###############################################################################
 ###################Import Function#############################################
 ###############################################################################
-source('simulation/scripts/6_functions.R')
+source('../simulation/scripts/6_functions.R')
 
 
 ###############################################################################
@@ -131,7 +129,7 @@ len <- 30
 dVec <- seq(from=0, to=len, by=1)
 
 # maps
-pdf(file="J2017-forest-map-polygon-circles-treated.pdf", height=8, width=8)
+pdf(file="../graphs/J2017-forest-map-polygon-circles-treated.pdf", height=8, width=8)
 par(mfrow=c(1,1))
 plot(ras, bty="n", box=FALSE, col = c("white", "darkgoldenrod4"), legend=FALSE, 
      cex.lab=2,
@@ -148,7 +146,7 @@ legend("bottomright", col = c("darkturquoise", "goldenrod1", "darkgoldenrod4"),
        lty=c(1, 1, NA), pch=c(NA, NA, 19), cex=1.5, pt.cex = c(.8, .8, .4), bty = "n")
 dev.off()
 
-pdf(file="J2017-forest-map-polygon-circles-control.pdf", height=8, width=8)
+pdf(file="../graphs/J2017-forest-map-polygon-circles-control.pdf", height=8, width=8)
 par(mfrow=c(1,1))
 plot(ras, bty="n", box=FALSE, col = c("white", "darkgoldenrod4"), legend=FALSE,
      cex.lab=2,
@@ -197,7 +195,7 @@ test.result <- SpatialEffectTest(result.list, test.range = c(1, 5), smooth = 0, 
 dVec_real <- dVec[-1]
 
 
-pdf(file="J2017_AME_polygon_unsmoothed_reproj_90CI.pdf", height=8, width=8)
+pdf(file="../graphs/J2017_AME_polygon_unsmoothed_reproj_90CI.pdf", height=8, width=8)
 par(mar = c(5, 5, 5, 5))
 plot(	AMR_est[1:17, 2] ~ dVec_real[1:17],
       ylab="Estimates",
@@ -218,7 +216,7 @@ legend("topright", col = c("black", "black", "blue"), lty=c(1,3,3), lwd = c(3, 3
        legend = c("AME estimates", "Spatial HAC 95% CI", "Quantiles under sharp null"), cex=2, bty = "n")
 dev.off()
 
-pdf(file="J2017_AME_polygon_smoothed_reproj_90CI.pdf", height=8, width=8)
+pdf(file="../graphs/J2017_AME_polygon_smoothed_reproj_90CI.pdf", height=8, width=8)
 par(mar = c(5, 5, 5, 5))
 plot(	AMR_est_smoothed[1:17, 2] ~ dVec_real[1:17],
       ylab="Estimates",
@@ -263,7 +261,7 @@ coefs_p <- ggplot(ha.data) +
         axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
         legend.position = "bottom", panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank()) + ylab("Estimates")
-ggsave(paste0("J2017_graphs/ha_coefs_reproj_90CI.pdf"), coefs_p, device = "pdf", height = 8, width = 8) 
+ggsave(paste0("../graphs/J2017_graphs/ha_coefs_reproj_90CI.pdf"), coefs_p, device = "pdf", height = 8, width = 8) 
 
 
 smooth_ests <- AMR_est_smoothed[1:17, 2]
@@ -379,7 +377,7 @@ save(smoothed.Conley.CIs, Conley.CIs, smoothed.est, file = "../data/forestResult
 
 dVec_real <- dVec
 CI_colors <- colorRampPalette(c("blue", "red"))(length(cutoffs))
-pdf(file="J2017_AME_polygon_HA_varyingbandwidth_proj_90CI.pdf", height=8, width=8)
+pdf(file="../graphs/J2017_AME_polygon_HA_varyingbandwidth_proj_90CI.pdf", height=8, width=8)
 par(mar = c(5, 5, 5, 5))
 plot(	AMR_est[1:17, 2] ~ dVec_real[1:17],
       ylab="Estimates",
@@ -400,7 +398,7 @@ legend("topright", col = c("black", CI_colors[1:5]), lty=c(1, rep(3, 5)), lwd = 
 dev.off()
 
 
-pdf(file="J2017_AME_polygon_smoothed_varyingbandwidth_proj_90CI.pdf", height=8, width=8)
+pdf(file="../graphs/J2017_AME_polygon_smoothed_varyingbandwidth_proj_90CI.pdf", height=8, width=8)
 par(mar = c(5, 5, 5, 5))
 plot(	smoothed.est[1:17] ~ dVec[1:17],
       ylab="Estimates",
